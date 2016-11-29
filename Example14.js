@@ -18,7 +18,7 @@ board.pinMode(4, board.MODES.OUTPUT); // direction DC motor
 });
 
 function handler(req,res){
-    fs.readFile(__dirname+"/Example13.html",
+    fs.readFile(__dirname+"/Example14.html",
     function(err,data){
         if (err){
             res.writeHead(500,{"Content-Type":"text/plain"});
@@ -36,6 +36,9 @@ var actualValue = 0; // variable for actual value (output value)
 var factor = 0.3; // proportional factor that determines the speed of aproaching toward desired value
 var pwm = 0; //pwm as global var
 
+var controlAlgorihtmStartedFlag = 0; // flag in global scope to see weather ctrlAlg has been started
+var intervalCtrl; // var for setInterval in global space
+
 http.listen(8080); //server will listen on port 8080
 
 var sendValueViaSocket; //var for sending messages
@@ -49,14 +52,20 @@ board.analogRead(1, function(value) {
     actualValue = value; // continuous read of pin A1
 });
 
-startControlAlgorithm ();
 
 io.sockets.on("connection", function(socket) {
     socket.emit("messageToClient", "Srv connected, brd OK");
     
-    
     setInterval(sendValues, 40, socket); //on 40ms trigerr func. sendValues
     
+    socket.on("startControlAlgorithm", function(){
+        startControlAlgorithm();
+    });
+    
+    socket.on("stopControlAlgorithm", function(){
+        stopControlAlgorithm();
+    });
+
 }); //end of socket.on connection
     
 });//end of board.on ready
@@ -68,19 +77,29 @@ function controlAlgorithm () {
     if(pwm < -255) {pwm = -255} // to limit the value for pwm / negative
     if (pwm > 0) {board.digitalWrite(2,1); board.digitalWrite(4,0);} // direction if > 0
     if (pwm < 0) {board.digitalWrite(2,0); board.digitalWrite(4,1);} // direction if < 0
-    board.analogWrite(3, Math.abs(pwm)+20);
+    board.analogWrite(3, Math.abs(pwm)+25);
 };
 
 function startControlAlgorithm () {
-    setInterval(function() {controlAlgorithm(); }, 30); // call alg on 30ms
-    console.log("Control algorithm started");
+    if (controlAlgorihtmStartedFlag == 0) {
+        controlAlgorihtmStartedFlag = 1; // set flag that the algorithm has started
+        intervalCtrl = setInterval(function() {controlAlgorithm(); }, 30); // call alg on 30ms
+        console.log("Control algorithm started");
+      }
+};
+
+function stopControlAlgorithm () {
+    clearInterval(intervalCtrl); // clear the interval of control algorihtm
+    board.analogWrite(3,0); // write 0 on pwm pin to stop the motor
+    controlAlgorihtmStartedFlag = 0; // set flag that the algorithm has stopped
 };
 
 function sendValues (socket) {
     socket.emit("clientReadValues",
     { // json notation between curly braces
     "desiredValue": desiredValue,
-    "actualValue": actualValue
+    "actualValue": actualValue,
+    "pwm": pwm
     });
 };
 
