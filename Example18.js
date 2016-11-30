@@ -18,7 +18,7 @@ board.pinMode(4, board.MODES.OUTPUT); // direction DC motor
 });
 
 function handler(req,res){
-    fs.readFile(__dirname+"/Example16.html",
+    fs.readFile(__dirname+"/Example18.html",
     function(err,data){
         if (err){
             res.writeHead(500,{"Content-Type":"text/plain"});
@@ -150,7 +150,10 @@ function sendValues (socket) {
     { // json notation between curly braces
     "desiredValue": desiredValue,
     "actualValue": actualValue,
-    "pwm": pwm
+    "pwm": pwm,
+    "err": err,
+    "errSum": errSum,
+    "dErr": dErr
     });
 };
 

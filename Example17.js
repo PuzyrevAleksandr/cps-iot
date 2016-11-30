@@ -18,7 +18,7 @@ board.pinMode(4, board.MODES.OUTPUT); // direction DC motor
 });
 
 function handler(req,res){
-    fs.readFile(__dirname+"/Example16.html",
+    fs.readFile(__dirname+"/Example17.html",
     function(err,data){
         if (err){
             res.writeHead(500,{"Content-Type":"text/plain"});
